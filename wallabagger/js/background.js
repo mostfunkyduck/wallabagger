@@ -430,7 +430,7 @@ function cutArticle (data) {
         is_archived: data.is_archived,
         title: data.title,
         url: data.url,
-        tags: data.tags,
+        tags: data.tags || [],
         domain_name: data.domain_name,
         preview_picture: data.preview_picture
     });
@@ -480,29 +480,33 @@ function savePageToWallabag (url, resetIcon) {
     browserIcon.set('wip');
     existCache.set(url, existStates.wip);
     postIfConnected({ response: 'info', text: Common.translate('Saving_the_page_to_wallabag') });
-    api.SavePage(url)
-        .then(data => applyDirtyCacheLight(url, data))
-        .then(data => {
-            if (!data.deleted) {
-                browserIcon.set('good');
-                postIfConnected({ response: 'article', article: cutArticle(data) });
-                cache.set(url, cutArticle(data));
-                saveExistFlag(url, existStates.exists);
-                if (api.data.AllowExistCheck !== true || resetIcon) {
-                    browserIcon.timedToDefault();
+    browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      browser.tabs.sendMessage(tabs[0].id, {getContent: true}, function(response) {
+        api.SavePage(url, tabs[0].title, response.content)
+            .then(data => applyDirtyCacheLight(url, data))
+            .then(data => {
+                if (!data.deleted) {
+                    browserIcon.set('good');
+                    postIfConnected({ response: 'article', article: cutArticle(data) });
+                    cache.set(url, cutArticle(data));
+                    saveExistFlag(url, existStates.exists);
+                    if (api.data.AllowExistCheck !== true || resetIcon) {
+                        browserIcon.timedToDefault();
+                    }
+                } else {
+                    cache.clear(url);
                 }
-            } else {
-                cache.clear(url);
-            }
-            return data;
-        })
-        .then(data => applyDirtyCacheReal(url, data))
-        .catch(error => {
-            browserIcon.setTimed('bad');
-            saveExistFlag(url, existStates.notexists);
-            postIfConnected({ response: 'error', error: { message: Common.translate('Save_Error') } });
-            throw error;
+                return data;
+            })
+            .then(data => applyDirtyCacheReal(url, data))
+            .catch(error => {
+                browserIcon.setTimed('bad');
+                saveExistFlag(url, existStates.notexists);
+                postIfConnected({ response: 'error', error: { message: Common.translate('Save_Error') } });
+                throw error;
+            });
         });
+    });
 };
 
 const GotoWallabag = (part) => api.checkParams() && browser.tabs.create({ url: `${api.data.Url}/${part}/list` });

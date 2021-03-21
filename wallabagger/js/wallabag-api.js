@@ -176,8 +176,11 @@ WallabagApi.prototype = {
         });
     },
 
-    SavePage: function (pageUrl) {
-        const content = { url: pageUrl, archive: this.data.ArchiveByDefault ? 1 : 0 };
+    SavePage: function (pageUrl, pageTitle, pageContent) {
+        let content = { url: pageUrl, title: pageTitle, archive: this.data.ArchiveByDefault ? 1 : 0 };
+        if (pageContent !== "") {
+          content["content"] = pageContent
+        }
         const entriesUrl = `${this.data.Url}/api/entries.json`;
         return this.CheckToken().then(a =>
             this.fetchApi.Post(entriesUrl, this.data.ApiToken, content)
