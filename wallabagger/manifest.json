@@ -13,6 +13,15 @@
     "default_icon": "img/wallabag-icon-48a.png",
     "default_popup": "popup.html"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": ["js/content.js"]
+    }
+  ],
   "background": {
     "scripts": [
       "js/common.js",
